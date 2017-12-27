@@ -9,6 +9,9 @@ FIRST_SPY = 0
 MAX_LIKELIHOOD = 1
 LOCAL_OPT = 2
 CENTRALITY = 3
+# Graph constraints
+SWEEP_THETA = 1
+SWEEP_D = 0
 
 
 def write_results(results_names, results_data, param_types, params, run_num = None):
@@ -52,10 +55,12 @@ def parse_arguments():
 						default=1)
 	parser.add_argument("-s","--spreading", type=int, help="Which spreading protocol to use (0)trickle, (1)diffusion",
 						default=0)
-	parser.add_argument("-e","--estimator", dest='estimators',default=[], type=int, 
-						help="Which estimator to use (0)first-spy, (1)ML, (2)local diffusion", action='append')
+	parser.add_argument("-e","--estimator", default=0, type=int, 
+						help="Which estimator to use (0)first-spy, (1)ML, (2)local diffusion")
 	parser.add_argument("--measure_time", help="measure runtime?",
 						action="store_true")
+	parser.add_argument("-d", "--degree", type=int, help="fixed degree of tree", default=0)
+	parser.add_argument("-q", "--theta", help="sweep theta?", action="store_true")
 	args = parser.parse_args()
 
 	if not (args.run is None):
@@ -65,7 +70,7 @@ def parse_arguments():
 	print 'verbose: ', args.verbose
 	print 'write to file: ', args.write
 	print 'spreading mechanism: ', args.spreading
-	print 'estimators: ', args.estimators
+	print 'estimator: ', args.estimator
 	print 'run: ', args.run
 	print 'num trials: ', args.trials, '\n'
 	return args

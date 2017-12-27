@@ -8,22 +8,24 @@ The two relevant files to run are main.py (for regular tree simulations) and dat
 	"-t","--trials", type=int, help="number of trials", default=1
 	"-s","--spreading", type=int, help="Which spreading protocol to use (0)trickle, (1)diffusion", default=0
 	"-e","--estimator", dest='estimators',default=[], type=int, help="Which estimator to use (0)first-spy, (1)ML (approximate)", action='append'
+	"-d", "--degree", type=int, help="fixed degree of tree", default=0  <-- if you don't specify this, the code just runs an array of degrees for regular 
+			trees. In dataset_main, this argument is ignored, since the graph is fixed
 
 
 We include below instructions for running the simulations in our paper. You may need to tune the runtimes (especially for diffusion) if the simulations are taking too long. This shouldn't affect accuracy too much, provided you run the simulation environment long enough for a node's local environment to get the message/transaction. 
 
-Figure 2: Run the following
-python main.py -t 5000 -s 0 -w -e 0
+Figure 2: First-timestamp estimator accuracy on d-regular trees when theta = 1
+python main.py -t 5000 -s 0 -w -e 0 (OK)
 
-Figure 5: 
-python main.py -t 5000 -s 0 -w -e 0 
-python main.py -t 5000 -s 0 -w -e 1
+Figure 5: First-timestamp vs. reporting centrality on diffusion over regular trees
+python main.py -t 5000 -s 0 -w -e 0  (OK)
+python main.py -t 5000 -s 0 -w -e 1  (NOT WORKING)
 
-Figure 6: Comparison of trickle and diffusion on 4-regular trees
-python main.py -t 5000 -s 0 -w -e 0 -d 4
-python main.py -t 5000 -s 1 -w -e 0 -d 4
+Figure 6: Comparison of trickle and diffusion on 4-regular trees, sweep theta
+python main.py -t 5000 -s 0 -w -e 0 -d 4 -q 1 (OK)
+python main.py -t 5000 -s 1 -w -e 0 -d 4 -q 1 (OK)
 
 Figure 7: First-spy estimator for both diffusion and trickle, on a snapshot of the Bitcoin P2P graph from 2015
-python dataset_main.py -t 5000 -s 0 -w -e 0
-python dataset_main.py -t 5000 -s 1 -w -e 0
+python dataset_main.py -t 5000 -s 0 -w -e 0 (OK)
+python dataset_main.py -t 5000 -s 1 -w -e 0 (OK)
 
