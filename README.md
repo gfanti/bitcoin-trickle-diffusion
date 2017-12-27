@@ -10,7 +10,7 @@ The two relevant files to run are main.py (for regular tree simulations) and dat
 	"-e","--estimator", dest='estimators',default=[], type=int, help="Which estimator to use (0)first-spy, (1)ML (approximate)", action='append'
 
 
-We include below instructions for running the simulations used to generate each of our figures. 
+We include below instructions for running the simulations in our paper. You may need to tune the runtimes (especially for diffusion) if the simulations are taking too long. This shouldn't affect accuracy too much, provided you run the simulation environment long enough for a node's local environment to get the message/transaction. 
 
 Figure 2: Run the following
 python main.py -t 5000 -s 0 -w -e 0
