@@ -19,21 +19,19 @@ We include below instructions for running the simulations in our paper. You may 
 
 *Figure 2*: First-timestamp estimator accuracy on d-regular trees when theta = 1
 
-python main.py -t 5000 -s 0 -w -e 0 (OK)
+`python main.py -t 5000 -s 0 -w -e 0`
 
 *Figure 5*: First-timestamp vs. reporting centrality on diffusion over regular trees; theta=1
 
-python main.py -t 5000 -s 0 -w -e 1  (NOT WORKING)
+`python main.py -t 5000 -s 0 -w -e 1`
 
 *Figure 6*: Comparison of trickle and diffusion on 4-regular trees, sweep theta
 
-python main.py -t 5000 -s 0 -w -e 0 -d 4 -q (OK)
-
-python main.py -t 5000 -s 1 -w -e 0 -d 4 -q (OK)
+`python main.py -t 5000 -s 0 -w -e 0 -d 4 -q`
+`python main.py -t 5000 -s 1 -w -e 0 -d 4 -q`
 
 *Figure 7*: First-spy estimator for both diffusion and trickle, on a snapshot of the Bitcoin P2P graph from 2015
 
-python dataset_main.py -t 5000 -s 0 -w -e 0 (OK)
-
-python dataset_main.py -t 5000 -s 1 -w -e 0 (OK)
+`python dataset_main.py -t 5000 -s 0 -w -e 0`
+`python dataset_main.py -t 5000 -s 1 -w -e 0`
 
