@@ -2,7 +2,9 @@
 Simulations illustrating differences between trickle and diffusion, for reproducing the plots from Fanti and Viswanath's "Deanonymization in the Bitcoin P2P Network," NIPS 2017.
 
 The two relevant files to run are main.py (for regular tree simulations) and dataset_main.py (for simulations on a real Bitcoin graph topology). Both files take the same input arguments, which are listed below:
-	"-r", "--run", type=int, help="changes the filename of saved data"
+
+	`"-r", "--run", type=int, help="changes the filename of saved data"`
+	
 	"-v", "--verbose", help="increase output verbosity", action="store_true"
 	"-w", "--write", help="writes the results to file", action="store_true"
 	"-t","--trials", type=int, help="number of trials", default=1
