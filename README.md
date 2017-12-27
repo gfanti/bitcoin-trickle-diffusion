@@ -3,8 +3,8 @@ Simulations illustrating differences between trickle and diffusion, for reproduc
 
 The two relevant files to run are main.py (for regular tree simulations) and dataset_main.py (for simulations on a real Bitcoin graph topology). Both files take the same input arguments, which are listed below:
 
-	`"-r", "--run", type=int, help="changes the filename of saved data"`
-	
+	```
+	"-r", "--run", type=int, help="changes the filename of saved data"
 	"-v", "--verbose", help="increase output verbosity", action="store_true"
 	"-w", "--write", help="writes the results to file", action="store_true"
 	"-t","--trials", type=int, help="number of trials", default=1
@@ -12,6 +12,7 @@ The two relevant files to run are main.py (for regular tree simulations) and dat
 	"-e","--estimator", dest='estimators',default=[], type=int, help="Which estimator to use (0)first-spy, (1)ML (approximate)", action='append'
 	"-d", "--degree", type=int, help="fixed degree of tree", default=0  <-- if you don't specify this, the code just runs an array of degrees for regular 
 			trees. In dataset_main, this argument is ignored, since the graph is fixed
+	```
 
 
 We include below instructions for running the simulations in our paper. You may need to tune the runtimes (especially for diffusion) if the simulations are taking too long. This shouldn't affect accuracy too much, provided you run the simulation environment long enough for a node's local environment to get the message/transaction. 
