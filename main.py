@@ -14,14 +14,13 @@ if __name__ == "__main__":
 	theta = 1  # number of connections to the eavesdropper per node
 	# degrees = xrange(7,8,1)
 	degrees = [2,3,4,5,6] # range of regular tree degrees to test
-	# degrees = xrange(10,11,1)
-	# degree = 2
+	
 	check_ml = False # use the ML estimator? this can be very slow
 
 
 	args = parse_arguments()
 
-	
+
 
 	trickle = False
 	diffusion = not trickle
