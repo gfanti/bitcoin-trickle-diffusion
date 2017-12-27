@@ -15,7 +15,7 @@ class RegularTree(nx.Graph):
 		super(RegularTree, self).__init__()
 		self.tree_degree = degree
 		self.source = 0
-		self.max_node = 0 # highest-index node in the list (should this be 1? I don't think so....)
+		self.max_node = 0 # highest-index node in the list 
 		self.active = [0] # list of nodes that are not fully surrounded by infected nodes
 		self.spreading_time = spreading_time
 		if self.spreading_time is None:
@@ -64,7 +64,7 @@ class RegularTree(nx.Graph):
 		else:
 			self.node[target]['infected'] = True
 			self.active += [target]
-			
+				
 
 		# Check if the source still has active neighbors; if not, remove it from active list
 		uninfected_neighbors = self.get_uninfected_neighbors(source)
@@ -79,11 +79,11 @@ class RegularTree(nx.Graph):
 
 class RegularTreeDiffusion(RegularTree):
 
-	def __init__(self, degree = None, spreading_time = None, lambda2 = 1):
+	def __init__(self, degree = None, spreading_time = None, theta = 1):
 		''' NB: Here the spreading_time	is actually the number of rings of the graph to infect'''
 		super(RegularTreeDiffusion, self).__init__(degree, spreading_time)
 		self.lambda1 = 1 # spreading rate over the diffusion graph
-		self.lambda2 = lambda2 # spreading rate from a node to the adversary
+		self.theta = theta # spreading rate from a node to the adversary
 		self.adversary_timestamps = {} 		# dictionary of adversary report time indexed by node
 		self.received_timestamps = {}		# dictionary of message receipt time indexed by node
 		self.received_timestamps[self.source] = 0
@@ -131,7 +131,7 @@ class RegularTreeDiffusion(RegularTree):
 			self.active = [i for i in new_boundary]
 
 	def send_to_adversary(self, node):
-		return self.received_timestamps[node] + np.random.exponential(1.0 / self.lambda2)
+		return self.received_timestamps[node] + np.random.exponential(1.0 / self.theta)
 
 	def send_to_neighbor(self, node):
 		return self.received_timestamps[node] + np.random.exponential(1.0 / self.lambda1)
@@ -140,13 +140,18 @@ class RegularTreeDiffusion(RegularTree):
 
 class RegularTreeTrickle(RegularTree):
 
-	def __init__(self, degree = None, spreading_time = None, num_corrupt_cnx = 1):
+	def __init__(self, degree = None, spreading_time = None, theta = 1):
+		''' Runs trickle spreading on a regular tree
+			Args:
+			spreading_time 		number of timesteps to run 
+			theta				number of connections to the eavesdropper per node
+		'''
 		super(RegularTreeTrickle, self).__init__(degree, spreading_time)
 		# self.adversary = -1
 		# self.adversary_timestamps = SortedDict()
 		# self.add_node(self.adversary, infected = False)
 		self.source = 0
-		self.num_corrupt_cnx = num_corrupt_cnx # spreading rate from a node to the adversary
+		self.theta = theta # spreading rate from a node to the adversary
 		# self.adversary_timestamps = {} 		# dictionary of adversary report time indexed by node
 		# self.received_timestamps = {}		# dictionary of message receipt time indexed by node
 		# self.received_timestamps[self.source] = 0
@@ -167,6 +172,7 @@ class RegularTreeTrickle(RegularTree):
 		# 	''' Creates a dict with nodes as keys and timestamps as values '''
 		# 	timestamp_dict = {}
 		# 	for key in self.adversary_timestamps.keys():
+		# 		print 'key', key
 		# 		for node in self.adversary_timestamps[key]:
 		# 			timestamp_dict[node] = key
 		# 	return timestamp_dict
@@ -176,7 +182,7 @@ class RegularTreeTrickle(RegularTree):
 
 		count = 0
 		
-		adversaries = [-(i+1) for i in range(self.num_corrupt_cnx)]
+		adversaries = [-(i+1) for i in range(self.theta)]
 
 		# Empty the observed timestamps
 		self.adversary_timestamps = {} 		# dictionary of adversary report time indexed by node

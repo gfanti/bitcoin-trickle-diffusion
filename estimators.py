@@ -220,162 +220,31 @@ class ReportingCentralityEstimator(PrunedDiffusionEstimator):
 		
 		return total
 
-class ConeDiffusionEstimator(PrunedDiffusionEstimator):
-	'''We expect the timestamps to increase in a cone around the true source. This estimator
-	tries to quantify the extent to which that happens--it penalizes nodes by the square of 
-	how much their adversarial report times differ from the expected timestamp'''
-
-	def __init__(self, G, verbose = False):
-		super(ConeDiffusionEstimator, self).__init__(G, verbose)
-
-
-	def estimate_source(self):
-
-		if self.verbose:
-			print 'adversary timestamps:', self.T.adversary_timestamps
-
-		if not self.T.nodes():
-			return []
-
-		score = [0 for i in range(len(self.T.nodes()))]
-		score = {}
-		for node in self.T.nodes():
-
-			if node in self.T.adversary_timestamps:
-				t_ref = self.T.adversary_timestamps[node]	# reference time at which node reported to source
-			else:
-				t_ref = self.T.spreading_time
-
-			score[node] = self.compute_score(node, t_ref)
-
-		scores = np.array(score.values())
-		nodes = score.keys()
-
-		if self.verbose:
-			print 'scores:', scores
-			print 'nodes:', nodes
-		indices = np.where(scores == scores.min())
-		
-		candidates = [nodes[i] for i in indices[0]]
-	
-		if self.verbose:
-			print 'cone candidates:', candidates
-		
-		return candidates
-
-	def compute_score(self, node, t_ref):
-		
-		score = 0
-		path_lengths = nx.shortest_path_length(self.T, node)
-
-		for v in self.T.nodes():
-			if v == node:
-				continue
-
-			hop_dist = path_lengths[v]
-			expected_time = t_ref + self.T.lambda1 * hop_dist
-			sd = np.power(hop_dist + (2 / np.square(self.T.lambda2)), 1)	# standard deviation of erlang RV, sum of hop_dist exponentials
-			if v in self.T.adversary_timestamps:
-				reported_time = self.T.adversary_timestamps[v]
-			else:
-				reported_time = self.T.spreading_time 
-			score += np.square((reported_time - expected_time) / sd)
-
-		return score
-
-class NeighborConeDiffusionEstimator(ConeDiffusionEstimator):
-	'''We expect the timestamps to increase in a cone around the true source. This estimator
-	tries to quantify the extent to which that happens--it penalizes nodes by the square of 
-	how much their adversarial report times differ from the expected timestamp'''
-
-	def __init__(self, G, verbose = False):
-		super(NeighborConeDiffusionEstimator, self).__init__(G, verbose)
-
-	def compute_score(self, node, t_ref):
-		score = 0
-		path_lengths = nx.shortest_path_length(self.T, node)
-
-		''' (1) Get spanning tree
-			(2) Do a depth-first traversal of spanning tree
-			(3) Compute the distance from the cone, but re-calibrate the cone at each observation
-		'''
-		dfs_tree = nx.dfs_tree(self.T, node)
-
-		for n in dfs_tree.nodes():
-			if (not n in self.T.adversary_timestamps) or (n == node):
-				continue
-
-			hop_dist = 1	# number of hops since last adversary observation
-			cur_node = dfs_tree.predecessors(n)[0]
-			while True:
-				if (cur_node in self.T.adversary_timestamps) or (cur_node == node):
-					break
-				# Move up the tree until you get a timestamp or hit the root
-				cur_node = dfs_tree.predecessors(cur_node)[0]
-				hop_dist += 1
-
-			expected_time = t_ref + self.T.lambda1 * hop_dist
-			sd = np.power(hop_dist + (2 / np.square(self.T.lambda2)), 0.5)	# standard deviation of erlang RV, sum of hop_dist exponentials
-				
-			if cur_node in self.T.adversary_timestamps:
-				reported_time = self.T.adversary_timestamps[cur_node]
-			else:
-				reported_time = self.T.spreading_time 
-			score += np.square((reported_time - expected_time) / sd)
-
-		return score
-
-class LocalMLDiffusionEstimator(ConeDiffusionEstimator):
-	'''Compute the local ML rule, but only in the neighborhood of each node'''
-
-	def __init__(self, G, locality = 2, verbose = False):
-		super(LocalMLDiffusionEstimator, self).__init__(G, verbose)
-		self.locality = locality
-
-	def compute_score(self, node, t_ref):
-		score = 0
-		path_lengths = nx.shortest_path_length(self.T, node)
-
-		''' (1) Get spanning tree
-			(2) Compute the likelihood of a local cone
-		'''
-		dfs_tree = nx.dfs_tree(self.T, node)
-
-		for n in dfs_tree.nodes():
-			if (not n in self.T.adversary_timestamps) or (n == node) or (path_lengths[n] > locality):
-				continue
-
-			hop_dist = 1	# number of hops since last adversary observation
-			cur_node = dfs_tree.predecessors(n)[0]
-			while True:
-				if (cur_node in self.T.adversary_timestamps) or (cur_node == node):
-					break
-				# Move up the tree until you get a timestamp or hit the root
-				cur_node = dfs_tree.predecessors(cur_node)[0]
-				hop_dist += 1
-
-			expected_time = t_ref + self.T.lambda1 * hop_dist
-			sd = np.power(hop_dist + (2 / np.square(self.T.lambda2)), 0.5)	# standard deviation of erlang RV, sum of hop_dist exponentials
-				
-			if cur_node in self.T.adversary_timestamps:
-				reported_time = self.T.adversary_timestamps[cur_node]
-			else:
-				reported_time = self.T.spreading_time 
-			score += np.square((reported_time - expected_time) / sd)
-
-		return score
-
-
 class GossipEstimator(Estimator):
 
 	def __init__(self, G, verbose = False):
 		super(GossipEstimator, self).__init__(G, verbose)
 
-	def get_starting_set(self, timestamp_dict):
+	def generate_timestamp_dict(self):
+		'''
+			Creates a dictionary with keys equal to first time of delivery to the adversary, 
+			and values equal to the identities of the nodes who delivered first at that time
+		'''
+		self.timestamp_dict = {}
+		for key in self.G.adversary_timestamps.keys():
+			time_of_infection = self.G.adversary_timestamps[key]
+			if time_of_infection in self.timestamp_dict:
+				self.timestamp_dict[time_of_infection].append(key)
+			else:
+				self.timestamp_dict[time_of_infection]=[key]
+
+	def get_starting_set(self):
 		# Gets the set of nodes within an appropriate radius of the 
 		# nodes that get the message first
 
-		min_timestamp, candidates_first_spy = self.G.adversary_timestamps.items()[0]
+		min_timestamp = min(self.timestamp_dict.keys())
+		candidates_first_spy = self.timestamp_dict[min_timestamp]
+		# min_timestamp, candidates_first_spy = self.G.adversary_timestamps.items()[0]
 		candidates = set(candidates_first_spy)
 
 		# Then look in an appropriate radius of the first timestamp...
@@ -387,9 +256,29 @@ class GossipEstimator(Estimator):
 				neighborhood = neighborhood.union(set(self.G.get_neighbors(neighborhood)))
 			cand_neighborhood += [neighborhood]
 		candidates = set.intersection(*cand_neighborhood)
-		if self.G.adversary in candidates:
-			candidates.remove(self.G.adversary)
+		# if self.G.adversary in candidates:
+		# 	candidates.remove(self.G.adversary)
 		return candidates
+
+	# def get_starting_set(self, timestamp_dict):
+	# 	# Gets the set of nodes within an appropriate radius of the 
+	# 	# nodes that get the message first
+
+	# 	min_timestamp, candidates_first_spy = self.G.adversary_timestamps.items()[0]
+	# 	candidates = set(candidates_first_spy)
+
+	# 	# Then look in an appropriate radius of the first timestamp...
+	# 	cand_neighborhood = []
+	# 	for candidate in candidates:
+	# 		neighborhood = set([candidate])
+	# 		for i in range(min_timestamp - 1):
+	# 			# print 'neighboring set',set(self.G.get_neighbors(candidates))
+	# 			neighborhood = neighborhood.union(set(self.G.get_neighbors(neighborhood)))
+	# 		cand_neighborhood += [neighborhood]
+	# 	candidates = set.intersection(*cand_neighborhood)
+	# 	if self.G.adversary in candidates:
+	# 		candidates.remove(self.G.adversary)
+	# 	return candidates
 
 
 class MLEstimator(GossipEstimator):
@@ -399,7 +288,7 @@ class MLEstimator(GossipEstimator):
 
 	def estimate_source(self):
 		''' Returns the list of nodes that could feasibly be
-		the true source (THIS IS NOT THE ML ESTIMATOR)'''
+		the true source (THIS IS NOT THE EXACT ML ESTIMATOR)'''
 
 		# Make sure there are timestamps
 		if not any(self.G.adversary_timestamps):
@@ -413,8 +302,9 @@ class MLEstimator(GossipEstimator):
 
 		# Find the list of eligible nodes, cut 1
 		# Start with the first-spy estimate...
-		timestamp_dict = self.G.generate_timestamp_dict()
-		candidates = self.get_starting_set(timestamp_dict)
+		# timestamp_dict = self.G.generate_timestamp_dict()
+		self.generate_timestamp_dict()
+		candidates = self.get_starting_set()
 
 		# print 'candidates are', candidates, 'before pruning'
 		# print 'timestamp_dict', timestamp_dict
@@ -466,7 +356,7 @@ class MLEstimatorMP(GossipEstimator):
 		self.timestamp_dict = None
 		self.rx_time = {}
 		self.count_dict = {}
-		self.adversary = self.G.adversary
+		# self.adversary = self.G.adversary
 		
 
 	def estimate_source(self):
@@ -480,10 +370,12 @@ class MLEstimatorMP(GossipEstimator):
 
 
 		# Get the starting set of nodes
-		self.timestamp_dict = self.G.generate_timestamp_dict()
+		self.generate_timestamp_dict()
+		# self.timestamp_dict = self.G.adversary_timestamps
+		# self.timestamp_dict = self.G.generate_timestamp_dict()
 		# try not updating boundary nodes
 		# ---------------------------------self.update_boundary_nodes()
-		candidates = self.get_starting_set(self.timestamp_dict)
+		candidates = self.get_starting_set()
 
 		if self.verbose:
 			# print 'timestamps are ', self.G.adversary_timestamps
@@ -529,7 +421,8 @@ class MLEstimatorMP(GossipEstimator):
 		for n in self.G.nodes():
 			# if self.G.node[n]['infected'] and (n not in self.timestamp_dict):
 			# 	self.timestamp_dict[n] = self.G.spreading_time + 1
-			if (not n == self.G.adversary) and (n not in self.timestamp_dict):
+			# if (not n == self.G.adversary) and (n not in self.timestamp_dict):
+			if (n not in self.timestamp_dict):
 				self.timestamp_dict[n] = self.G.spreading_time + 1
 
 	def get_tree_neighbors(self, node, remove_item = None):
@@ -538,7 +431,7 @@ class MLEstimatorMP(GossipEstimator):
 
 		neighbors = [n for n in self.G.neighbors(node) if 
 						(self.G.node[n]['infected'] == True) and
-						not (n == self.adversary) and
+						# not (n == self.adversary) and
 						not (n == remove_item) and 
 						(n in self.timestamp_dict)]
 		return neighbors

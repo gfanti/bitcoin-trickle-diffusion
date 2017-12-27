@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
 				if trickle:
 					# Trickle trials
-					G = RegularTreeTrickle(degree,spreading_time, num_corrupt_cnx = theta)
+					G = RegularTreeTrickle(degree,spreading_time, theta = theta)
 					G.spread_message(first_spy_only = (not check_ml))
 					
 					# First spy estimator
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
 				if diffusion:
 					# Diffusion trials
-					G = RegularTreeDiffusion(degree, spreading_time, theta)
+					G = RegularTreeDiffusion(degree, spreading_time, theta=theta)
 					G.spread_message(first_spy_only = (not check_ml))
 
 					# G.draw_plot()
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 					est_first = FirstSpyEstimator(G, args.verbose)
 					result_first = est_first.estimate_source()
 					acc_first = est_first.compute_accuracy(G.source, result_first)
-					count_first_diff += acc_first
+					count_first += acc_first
 
 					# # Rumor centrality estimator
 					# est_rc = RumorCentralityEstimator(G, args.verbose)
